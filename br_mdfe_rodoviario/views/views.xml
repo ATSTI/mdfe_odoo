@@ -1,0 +1,229 @@
+<odoo>
+    <data>
+        <!-- Inicio da Estrutura Básica -->
+        <!-- Forms -->
+        <record model="ir.ui.view" id="mdfe_eletronic_form">
+            <field name="name">Manifesto Eletronico Form</field>
+            <field name="model">mdfe.eletronic</field>
+            <field name="inherit_id" ref="br_mdfe_base.mdfe_eletronic_form" />
+            <field name="arch" type="xml">
+                <notebook position="inside">
+                    <page string="Modal Rodoviário" attrs="{'invisible':[('modal','!=','1')]}">
+                        <field name="modal_rodoviario" attrs="{'required':[('modal','=','1')]}"/>
+                    </page>
+                </notebook>
+            </field>
+        </record>
+
+        <!-- Inicio Modal Rodoviario -->
+        <!-- Tree Inicio -->
+        <record model="ir.ui.view" id="modal_rodoviario_tree">
+            <field name="name">Modal Rodoviario Tree</field>
+            <field name="model">modal.rodoviario</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="rntrc"/>
+                    <field name="ciot"/>
+                    <field name="condutores"/>
+                    <field name="veiculos"/>
+                </tree>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="modal_rodoviario_ciot_tree">
+            <field name="name">Modal Rodoviario Ciot Tree</field>
+            <field name="model">modal.rodoviario.ciot</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="ciot"/>
+                </tree>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="modal_rodoviario_condutores_tree">
+            <field name="name">Modal Rodoviario Condutores Tree</field>
+            <field name="model">modal.rodoviario.condutores</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="condutor"/>
+                    <field name="nome"/>
+                    <field name="cpf"/>
+                </tree>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="modal_rodoviario_veiculos_tree">
+            <field name="name">Modal Rodoviario Veiculos Tree</field>
+            <field name="model">modal.rodoviario.veiculos</field>
+            <field name="type">tree</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="tipo_veiculo"/>
+                    <field name="codigo_veiculo"/>
+                    <field name="placa"/>
+                    <field name="renavam"/>
+                    <field name="tara"/>
+                    <field name="cap_kg"/>
+                    <field name="cap_m3"/>
+                    <field name="tipo_rodado"/>
+                    <field name="tipo_carroceria"/>
+                    <field name="uf"/>
+                    <field name="proprietario"/>
+                </tree>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="modal_rodoviario_veiculos_proprietario_tree">
+            <field name="name">Modal Rodoviario Veiculos proprietario Tree</field>
+            <field name="model">modal.rodoviario.veiculos.proprietario</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="proprietario"/>
+                    <field name="cnpj_cpf"/>
+                    <field name="rntrc"/>
+                    <field name="nome"/>
+                    <field name="ie"/>
+                    <field name="uf"/>
+                    <field name="tipo_prop"/>
+                </tree>
+            </field>
+        </record>
+        <!-- Tree Fim -->
+
+        <!-- Forms Inicio -->
+        <record model="ir.ui.view" id="modal_rodoviario_form">
+            <field name="name">Modal Rodoviario Form</field>
+            <field name="model">modal.rodoviario</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <group col="2" colspan="1">
+                    <field name="rntrc"/>
+                </group>
+                <notebook>
+                    <page string="CIOT">
+                        <field name="ciot"/>
+                    </page>
+                    <page string="Condutores">
+                        <field name="condutores"/>
+                    </page>
+                    <page string="Veículos">
+                        <field name="veiculos"/>
+                    </page>
+                </notebook>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="modal_rodoviario_veiculos_form">
+            <field name="name">Modal Rodoviario Veiculos Form</field>
+            <field name="model">modal.rodoviario.veiculos</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <group col="2" colspan="2">
+                        <field name="veiculo"/>
+                        <field name="tipo_veiculo"/>
+                        <field name="codigo_veiculo"/>
+                        <field name="placa"/>
+                        <field name="renavam"/>
+                        <field name="tara"/>
+                        <field name="cap_kg"/>
+                        <field name="cap_m3"/>
+                        <field name="tipo_rodado"/>
+                        <field name="tipo_carroceria"/>
+                        <field name="uf" options="{'no_create': True, 'no_quick_create': True, 'no_create_edit' : True}"/>
+                        <field name="proprietario"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="modal_rodoviario_ciot_form">
+            <field name="name">Modal Rodoviario Ciot Form</field>
+            <field name="model">modal.rodoviario.ciot</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <group>
+                    <field name="ciot"/>
+                </group>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="modal_rodoviario_condutores_form">
+            <field name="name">Modal Rodoviario Condutores Form</field>
+            <field name="model">modal.rodoviario.condutores</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <group>
+                    <field name="condutor"/>
+                    <field name="nome"/>
+                    <field name="cpf"/>
+                </group>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="modal_rodoviario_veiculos_proprietario_form">
+            <field name="name">Modal Rodoviario Veiculos Proprietario Form</field>
+            <field name="model">modal.rodoviario.veiculos.proprietario</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <group>
+                        <field name="proprietario"/>
+                        <field name="cnpj_cpf"/>
+                        <field name="rntrc"/>
+                        <field name="nome"/>
+                        <field name="ie"/>
+                        <field name="uf" options="{'no_create': True, 'no_quick_create': True, 'no_create_edit' : True}"/>
+                        <field name="tipo_prop"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <!-- Forms Fim -->
+        <!-- Fim Modal Rodoviario -->
+
+        <record model="ir.ui.view" id="veiculos_form">
+            <field name="name">Modal Rodoviario Veiculos Form</field>
+            <field name="model">veiculos</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <group>
+                        <field name="tipo_veiculo"/>
+                        <field name="placa"/>
+                        <field name="renavam"/>
+                        <field name="tara"/>
+                        <field name="cap_kg"/>
+                        <field name="cap_m3"/>
+                        <field name="tipo_rodado"/>
+                        <field name="tipo_carroceria"/>
+                        <field name="uf" options="{'no_create': True, 'no_quick_create': True, 'no_create_edit' : True}"/>
+                        <field name="proprietario"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="proprietario_form">
+            <field name="name">Modal Rodoviario Veiculos proprietario Form</field>
+            <field name="model">veiculos.proprietario</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <group>
+                        <field name="proprietario"/>
+                        <field name="cnpj_cpf"/>
+                        <field name="rntrc"/>
+                        <field name="nome"/>
+                        <field name="ie"/>
+                        <field name="uf" options="{'no_create': True, 'no_quick_create': True, 'no_create_edit' : True}"/>
+                        <field name="tipo_prop"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+
+        <!-- Actions -->
+        <record model="ir.actions.act_window" id="veiculos_action">
+            <field name="name">Manifesto Eletronico - Veículos</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">veiculos</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+        <!-- Menus -->
+        <menuitem name="Veículos" id="veiculos_menu" parent="br_mdfe_base.mdfe_eletronic_root" action="veiculos_action"/>
+    </data>
+</odoo>

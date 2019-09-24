@@ -1,0 +1,9 @@
+<odoo>
+    <data noupdate="1">
+        <record id="seq_hr_employee" model="ir.sequence">
+            <field name="name">mdfe_eletronic_veiculo_sequence</field>
+            <field name="code">mdfe_eletronic_code_veiculo</field>
+            <field name="padding">5</field>
+        </record>
+    </data>
+</odoo>

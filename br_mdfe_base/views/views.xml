@@ -1,0 +1,377 @@
+<odoo>
+    <data>
+        <!-- Inicio da Estrutura Básica -->
+        <!-- Tree Inicio -->
+        <record model="ir.ui.view" id="mdfe_eletronic_tree">
+            <field name="name">Manifesto Eletronico Tree</field>
+            <field name="model">mdfe.eletronic</field>
+            <field name="type">tree</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="numero_mdfe"/>
+                    <field name="serie"/>
+                    <field name="tipo_emitente_mdfe"/>
+                    <field name="dh_ini_viagem"/>
+                    <field name="data_emissao"/>
+                    <field name="valor_carga"/>
+                    <field name="codigo_unid"/>
+                    <field name="qtd_carga"/>
+                    <field name="lacres"/>
+                    <field name="inf_mun_carrega"/>
+                    <field name="inf_percurso"/>
+                    <field name="inf_mun_descarga"/>
+                </tree>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="mdfe_lacres_tree">
+            <field name="name">Lacres do MDF-e</field>
+            <field name="model">mdfe.lacres</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="numero_lacre"/>
+                </tree>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="aut_xml_tree">
+            <field name="name">CNPJ Autorizados para downloads</field>
+            <field name="model">aut.xml</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="parceiro"/>
+                    <field name="cnpj_cpf"/>
+                </tree>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="inf_mun_carrega_tree">
+            <field name="name">Informações de Carrgamento</field>
+            <field name="model">inf.mun.carrega</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="mun"/>
+                </tree>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="inf_percurso_tree">
+            <field name="name">Informações de Percurso</field>
+            <field name="model">inf.percurso</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="uf"/>
+                </tree>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="inf_mun_desca_tree">
+            <field name="name">Informações de descarga</field>
+            <field name="model">inf.mun.desca</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="mun"/>
+                    <field name="inf_documents"/>
+                </tree>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="inf_documents_tree">
+            <field name="name">Informações de Documentos para descarga</field>
+            <field name="model">inf.documents</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="tp_document"/>
+                    <field name="chave"/>
+                    <field name="seg_cod_barra"/>
+                    <field name="inf_unid_transp"/>
+                </tree>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="inf_unid_transp_tree">
+            <field name="name">Informações Unidade de Transporte</field>
+            <field name="model">inf.unid.transp</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="tp_unid_transp"/>
+                    <field name="id_unid_transp"/>
+                    <field name="qtd_rat"/>
+                    <field name="lac_unid_transp"/>
+                </tree>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="lac_unid_transp_tree">
+            <field name="name">Lacres Unidade de Transporte</field>
+            <field name="model">lac.unid.transp</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="numero_lacre"/>
+                </tree>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="inf_unid_carga_tree">
+            <field name="name">Informações Unidade de Carga</field>
+            <field name="model">inf.unid.carga</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="tp_unid_carga"/>
+                    <field name="id_unid_carga"/>
+                    <field name="qtd_rat"/>
+                    <field name="lac_unid_carga"/>
+                </tree>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="lac_unid_carga_tree">
+            <field name="name">Lacres Unidade de Carga</field>
+            <field name="model">lac.unid.carga</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="numero_lacre"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Forms -->
+        <record model="ir.ui.view" id="mdfe_eletronic_form">
+            <field name="name">Manifesto Eletronico Form</field>
+            <field name="model">mdfe.eletronic</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <head>
+                        <button name="validar_mdfe" string="Validar" type="object" class="oe_highlight"/>
+                    </head>
+                    <group string="Principal" col="4" colspan="2">
+                        <field name="emitente"/>
+                        <field name="serie"/>
+                        <field name="tipo_tranpor" attrs="{'invisible':[('tipo_emitente_mdfe','=','2')]}"/>
+                        <field name="tipo_emitente_mdfe"/>
+                        <field name="ind_canal_verde"/>
+                    </group>
+                    <field name="emit_nome" invisible="1"/>
+                    <field name="emit_fantasia" invisible="1"/>
+                    <field name="emit_inscr_est" invisible="1"/>
+                    <field name="emit_cnpj_cpf" invisible="1"/>
+                    <field name="emit_logradouro" invisible="1"/>
+                    <field name="emit_nro" invisible="1"/>
+                    <field name="emit_xcpl" invisible="1"/>
+                    <field name="emit_bairro" invisible="1"/>
+                    <field name="emit_mun" invisible="1"/>
+                    <field name="emit_uf" invisible="1"/>
+                    <field name="emit_cep" invisible="1"/>
+                    <field name="emit_fone" invisible="1"/>
+                    <field name="emit_email" invisible="1"/>
+                    <field name="amb" invisible="1"/>
+                    <group string="Datas" col="4" colspan="2">
+                        <field name="dh_ini_viagem"/>
+                        <field name="data_emissao"/>
+                    </group>
+                    <group string="Totalizadores da carga" col="4" colspan="1">
+                        <field name="valor_carga"/>
+                        <field name="codigo_unid"/>
+                        <field name="qtd_carga"/>
+                    </group>
+                    <group string="Tipo de Modal" col="2" colspan="1">
+                        <field name="modal"/>
+                    </group>
+                    <group string="Dados sobre a viagem">
+                        <notebook>
+                            <page string="Carregamento">
+                                <field name="inf_mun_carrega"/>
+                            </page>
+                            <page string="Percurso">
+                                <field name="inf_percurso"/>
+                            </page>
+                            <page string="Descarremento">
+                                <field name="inf_mun_descarga"/>
+                            </page>
+                        </notebook>
+                    </group>
+                    <group string="Informações Extras">
+                        <notebook>
+                            <page string="CNPJ Autorizados">
+                                <field name="aut_xml"/>
+                            </page>
+                            <page string="Lacres">
+                                <field name="lacres"/>
+                            </page>
+                            <page string="Outras informações">
+                                <group col="4" colspan="2">
+                                    <field name="inf_ad_fisco"/>
+                                    <field name="inf_cpl"/>
+                                </group>
+                            </page>
+                        </notebook>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="mdfe_lacres_form">
+            <field name="name">Lacres do MDF-e</field>
+            <field name="model">mdfe.lacres</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <group>
+                        <field name="numero_lacre"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="aut_xml_form">
+            <field name="name">CNPJ Autorizados para downloads</field>
+            <field name="model">aut.xml</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <group>
+                        <field name="parceiro"/>
+                        <field name="cnpj_cpf" invisible="1"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="inf_mun_carrega_form">
+            <field name="name">Informações de Carregamento</field>
+            <field name="model">inf.mun.carrega</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <group>
+                        <field name="mun" options="{'no_create': True, 'no_quick_create': True, 'no_create_edit' : True}"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="inf_percurso_form">
+            <field name="name">Informações de Percurso</field>
+            <field name="model">inf.percurso</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <group>
+                        <field name="uf" options="{'no_create': True, 'no_quick_create': True, 'no_create_edit' : True}"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="inf_mun_desca_form">
+            <field name="name">Informações de descarga</field>
+            <field name="model">inf.mun.desca</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <group>
+                        <field name="mun" options="{'no_create': True, 'no_quick_create': True, 'no_create_edit' : True}"/>
+                        <field name="inf_documents"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="inf_documents_form">
+            <field name="name">Informações de Documentos para descarga</field>
+            <field name="model">inf.documents</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <group col="1" colspan="1">
+                        <field name="tp_document"/>
+                    </group>
+                    <group col="4" colspan="2">
+                        <field name="chave"/>
+                        <field name="seg_cod_barra"/>
+                    </group>
+                    <group col="1" colspan="1">
+                        <field name="inf_unid_transp"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="inf_unid_transp_form">
+            <field name="name">Informações Unidade de Transporte</field>
+            <field name="model">inf.unid.transp</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <group>
+                        <field name="tp_unid_transp"/>
+                    </group>
+                    <group col="4" colspan="2">
+                        <field name="id_unid_transp"/>
+                        <field name="qtd_rat"/>
+                    </group>
+                    <group>
+                        <field name="lac_unid_transp"/>
+                        <field name="inf_unid_carga"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="lac_unid_transp_form">
+            <field name="name">Lacres Unidade de Transporte</field>
+            <field name="model">lac.unid.transp</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <group>
+                        <field name="numero_lacre"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="inf_unid_carga_form">
+            <field name="name">Informações Unidade de Carga</field>
+            <field name="model">inf.unid.carga</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <group col="4" colspan="2">
+                        <field name="tp_unid_carga"/>
+                        <field name="id_unid_carga"/>
+                        <field name="qtd_rat"/>
+                    </group>
+                    <group>
+                        <field name="lac_unid_carga"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="lac_unid_carga_form">
+            <field name="name">Lacres Unidade de Carga</field>
+            <field name="model">lac.unid.carga</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <group>
+                        <field name="numero_lacre"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <!-- Forms Fim -->
+        <!-- Fim da Estrutura Básica -->
+
+        <record id="view_br_mdfe_form" model="ir.ui.view">
+            <field name="name">br_account_nfe.res.company.form</field>
+            <field name="model">res.company</field>
+            <field name="inherit_id" ref="br_base.view_company_form_inherited" />
+            <field name="arch" type="xml">
+                <notebook position="inside">
+                    <page name="mdfe" string="Manifesto Eletronico">
+                        <group name="nfce" string="MDF-e">
+                            <field name="tipo_ambiente_mdfe" />
+                            <field name="tipo_emitente_mdfe" />
+                        </group>
+                    </page>
+                </notebook>
+            </field>
+        </record>
+        <!-- Actions -->
+        <record model="ir.actions.act_window" id="mdfe_eletronic_action">
+            <field name="name">Manifesto Eletronico</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">mdfe.eletronic</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+        <!-- Menus -->
+        <menuitem name="Manifesto Eletronico" id="mdfe_eletronic_root"/>
+        <menuitem name="Manifesto Eletronico" id="mdfe_eletronic_menu" parent="mdfe_eletronic_root"
+            action="mdfe_eletronic_action"/>
+    </data>
+</odoo>
