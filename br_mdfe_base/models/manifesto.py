@@ -1,14 +1,12 @@
 # coding=utf-8
 import re
-import sys
 import random
 import logging
 from odoo import models, fields, api
 from odoo.exceptions import UserError
 from mdfelib.v3_00 import mdfe as mdfe3
-from mdfelib.v3_00 import mdfeModalRodoviario as rodo3
 from odoo.addons import decimal_precision as dp
-
+from dateutil.tz import tzoffset
 
 _logger = logging.getLogger(__name__)
 
@@ -82,6 +80,13 @@ class MdfeEletronic(models.Model):
         required=True,
         string=u'Tipo de Emitente',
     )
+    tipo_emissao = fields.Selection([
+        ('1', u'Normal'),
+        ('2', u'Contingência')],
+        required=True,
+        string=u'Forma de emissão do MDF-e',
+        default=1
+    )
     tipo_tranpor = fields.Selection([
         ('1', u'ETC'),
         ('2', u'TAC'),
@@ -93,6 +98,12 @@ class MdfeEletronic(models.Model):
         required=False,
         string='Canal Verde',
         help=u'Participante do projeto Canal Verde'
+    )
+    ind_carrega_posterior = fields.Boolean(
+        required=False,
+        string='Indicador de Carga posterior',
+        help=u'Indicador de MDF-e com inclusão da Carga posterior a emissão '
+             u'por evento de inclusão de DF-e'
     )
     serie = fields.Many2one(
         string=u'Série',
@@ -314,7 +325,6 @@ class MdfeEletronic(models.Model):
 
     @api.multi
     def validar_mdfe(self):
-        vals = self._prepare_edoc_modal()
         ender_emit = mdfe3.TEndeEmi(
             xLgr=str(self.emit_logradouro),
             nro=str(self.emit_nro),
@@ -345,32 +355,55 @@ class MdfeEletronic(models.Model):
             )
             carregamentos.append(carregamento_append)
 
-        ide = mdfe3.ideType(
-            cUF=str(self.emit_uf.ibge_code),
-            tpAmb=self.amb,
-            tpEmit=self.tipo_emit,
-            tpTransp=None if self.tipo_tranpor is False else '1',
-            mod=58,
-            serie=self.serie,
-            nMDF=self.numero_mdfe,
-            cMDF=self.codigo_mdfe,
-            cDV=self.cdv,
-            modal=self.modal,
-            dhEmi=self.data_emissao,
-            tpEmis=1,
-            procEmi='0',
-            verProc='Odoo',
-            UFIni=self.inf_mun_carrega[0].code,
-            UFFim=self.inf_mun_descarga[0].code,
-            infMunCarrega=carregamentos,
-            infPercurso=None,
-            dhIniViagem=None,
-            indCanalVerde=None,
-        )
+        percursos = []
+        for percurso in self.inf_percurso:
+            if self.inf_mun_carrega[0].code != percurso.code != \
+                    self.inf_mun_descarga[0].code:
+                percursos.append(mdfe3.infPercursoType(percurso.code))
 
-    def _prepare_edoc_modal(self):
-        # Validação e preparativo do modal
-        vals = {}
-        if self.emit_fone is not False:
-            vals['enderEmit']['fone'] = self.emit_fone
-        return vals
+        ide = {
+            'cUF': str(self.emit_uf.ibge_code),
+            'tpAmb': self.amb,
+            'tpEmit': self.tipo_emit,
+            'tpTransp': None if self.tipo_tranpor is False else '1',
+            'mod': 58,
+            'serie': self.serie,
+            'nMDF': self.numero_mdfe,
+            'cMDF': self.codigo_mdfe,
+            'cDV': self.cdv,
+            'modal': self.modal,
+            'dhEmi': self.data_emissao.replace(microsecond=0).isoformat(),
+            'tpEmis': self.tipo_emissao,
+            'procEmi': '0',
+            'verProc': 'Odoo',
+            'UFIni': self.inf_mun_carrega[0].code,
+            'UFFim': self.inf_mun_descarga[0].code,
+            'infMunCarrega': carregamentos,
+            'infPercurso': percursos,
+            'dhIniViagem':
+                self.dh_ini_viagem.replace(microsecond=0).isoformat()
+        }
+        if self.ind_canal_verde is not False:
+            ide['indCanalVerde'] = self.ind_canal_verde
+
+        if self.ind_carrega_posterior is not False:
+            ide['indCarregaPosterior'] = self.ind_carrega_posterior
+        ide = mdfe3.ideType(**ide)
+        print(ide.export())
+
+    def monta_chave(self):
+        chave_parcial = "%s%s%s%s%s%s%d%s" % (
+            self.emit_uf.ibge_code, self.data_emissao,
+            self.emit_cnpj_cpf, '58',
+            self.serie.code.zfill(3), str(self.numero_mdfe).zfill(9),
+            self.tipo_emissao, self.codigo_mdfe)
+        chave_parcial = re.sub('[^0-9]', '', chave_parcial)
+        soma = 0
+        contador = 2
+        for c in reversed(chave_parcial):
+            soma += int(c) * contador
+            contador += 1
+            if contador == 10:
+                contador = 2
+        dv = (11 - soma % 11) if (soma % 11 != 0 and soma % 11 != 1) else 0
+        return chave_parcial + str(dv)

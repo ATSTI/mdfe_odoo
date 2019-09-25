@@ -8,18 +8,15 @@
             <field name="type">tree</field>
             <field name="arch" type="xml">
                 <tree>
+                    <head>
+                        <button name="validar_mdfe" string="Validar MDF-e" class="oe_highlight" type="object"/>
+                    </head>
                     <field name="numero_mdfe"/>
                     <field name="serie"/>
                     <field name="tipo_emitente_mdfe"/>
                     <field name="dh_ini_viagem"/>
                     <field name="data_emissao"/>
                     <field name="valor_carga"/>
-                    <field name="codigo_unid"/>
-                    <field name="qtd_carga"/>
-                    <field name="lacres"/>
-                    <field name="inf_mun_carrega"/>
-                    <field name="inf_percurso"/>
-                    <field name="inf_mun_descarga"/>
                 </tree>
             </field>
         </record>
