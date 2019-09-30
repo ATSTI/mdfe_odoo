@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="fiscal_document_58" model="br_account.fiscal.document">
+            <field name="name">MDF-e - Manifesto Eletrônico de Documentos Fiscais</field>
+            <field name="code">58</field>
+            <field name="electronic">True</field>
+            <field name="nfse_eletronic">False</field>
+        </record>
+        <record id="mdfe_numero_sequence" model="ir.sequence">
+            <field name="name">Série 1 - Manifesto Eletrônico de Documentos Fiscais</field>
+            <field name="code">mdfe_eletronic_numero</field>
+            <field name="padding">9</field>
+        </record>
+        <record id="br_document_serie_1_mdfe" model="br_account.document.serie">
+            <field name="code">1</field>
+            <field name="name">Série 1 - Manifesto Eletrônico de Documentos Fiscais</field>
+            <field name="fiscal_document_id" ref="fiscal_document_58" />
+            <field name="company_id" ref="base.main_company" />
+            <field name="active">True</field>
+            <field name="fiscal_type">product</field>
+            <field name="internal_sequence_id" ref="mdfe_numero_sequence"/>
+        </record>
+    </data>
+</odoo>

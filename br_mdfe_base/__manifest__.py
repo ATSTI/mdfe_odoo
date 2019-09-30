@@ -14,10 +14,15 @@
     'category': 'Manufacturing',
     'version': '1.0',
     'depends': ['account', 'br_account', 'base'],
-    'external_dependencies': {},
+    'external_dependencies': {
+        'python': [
+            'dateutil',
+            'mdfelib',
+            'erpbrasil.assinatura'
+        ]
+    },
     'data': [
         'views/views.xml',
-        'data/br_account.fiscal.document.csv',
-        'data/br_account.document.serie.xml',
+        'data/data.xml',
     ],
 }

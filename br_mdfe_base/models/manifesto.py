@@ -2,11 +2,15 @@
 import re
 import random
 import logging
+import sys
 from odoo import models, fields, api
 from odoo.exceptions import UserError
 from mdfelib.v3_00 import mdfe as mdfe3
 from odoo.addons import decimal_precision as dp
+from datetime import datetime
 from dateutil.tz import tzoffset
+from pytz import timezone
+
 
 _logger = logging.getLogger(__name__)
 
@@ -14,6 +18,7 @@ _logger = logging.getLogger(__name__)
 class MdfeEletronic(models.Model):
     _name = 'mdfe.eletronic'
 
+    name = fields.Char()
     emitente = fields.Many2one(
         comodel_name='res.company',
         required=True,
@@ -74,9 +79,7 @@ class MdfeEletronic(models.Model):
     )
     tipo_emitente_mdfe = fields.Selection([
         ('1', u'Prestador de serviço de transporte'),
-        ('2', u'Transportador de Carga Própria'),
-        ('3', u'Prestador de serviço de transporte que emitirá CT-e '
-              u'Globalizado')],
+        ('2', u'Transportador de Carga Própria')],
         required=True,
         string=u'Tipo de Emitente',
     )
@@ -85,7 +88,7 @@ class MdfeEletronic(models.Model):
         ('2', u'Contingência')],
         required=True,
         string=u'Forma de emissão do MDF-e',
-        default=1
+        default='1'
     )
     tipo_tranpor = fields.Selection([
         ('1', u'ETC'),
@@ -107,7 +110,8 @@ class MdfeEletronic(models.Model):
     )
     serie = fields.Many2one(
         string=u'Série',
-        comodel_name='br_account.document.serie'
+        comodel_name='br_account.document.serie',
+        required=True
     )
     numero_mdfe = fields.Char(
         string=u'Número',
@@ -189,13 +193,6 @@ class MdfeEletronic(models.Model):
         if len(self.emitente) == 1:
             erros = []
             partner_id = self.emitente.partner_id
-            serie = self.env['br_account.document.serie'].search([
-                ['company_id', '=', self.emitente.id],
-                ['active', '=', True],
-            ])
-            if len(serie) == 0:
-                self.serie = serie.id
-
             if partner_id.name is False:
                 erros.append(u'Nome do emitente '
                              u'inválido ou não foi informado\n ')
@@ -251,6 +248,18 @@ class MdfeEletronic(models.Model):
             self.emit_fone = partner_id.phone
             self.emit_email = partner_id.email
             self.amb = self.emitente.tipo_ambiente_mdfe
+            # Verificando se só existe uma serie ou mais de uma
+            ids_series = self.env.ref('br_mdfe_base.fiscal_document_58').ids
+            search_serie = [
+                ('fiscal_document_id', 'in', ids_series),
+                ('active', '=', True),
+                ('company_id', '=', self.emitente.id)
+            ]
+            serie = self.env['br_account.document.serie'].search(search_serie)
+            # Caso exista mais de uma, retorne lista caso contrario escolha ela
+            if len(serie) == 1:
+                self.serie = serie.id
+            return {'domain': {'serie': search_serie}}
 
     @api.model
     def create(self, vals):
@@ -317,9 +326,13 @@ class MdfeEletronic(models.Model):
                     raise UserError(
                         u'Existe municípios de descarregamento repetidos')
 
-        vals['numero_mdfe'] = self.env['ir.sequence'].\
-            next_by_code('mdfe_eletronic_numero')
-
+        if 'serie' not in vals:
+            raise UserError(u'Serie é obrigatorio')
+        serie = self.env['br_account.document.serie'].search(
+            [('id', '=', vals['serie'])]
+        )
+        vals['numero_mdfe'] = serie.internal_sequence_id.next_by_id()
+        vals['name'] = 'MDF-e {}'.format(vals['numero_mdfe'])
         vals['codigo_mdfe'] = random.randrange(0, 99999999, 8)
         return super(MdfeEletronic, self).create(vals)
 
@@ -351,7 +364,7 @@ class MdfeEletronic(models.Model):
                     carregamento.mun.state_id.ibge_code,
                     carregamento.mun.ibge_code
                 ),
-                xMunCarrega=carregamento.mun.ibge_code.name
+                xMunCarrega=carregamento.mun.name
             )
             carregamentos.append(carregamento_append)
 
@@ -361,42 +374,65 @@ class MdfeEletronic(models.Model):
                     self.inf_mun_descarga[0].code:
                 percursos.append(mdfe3.infPercursoType(percurso.code))
 
+        if self.data_emissao is False:
+            tz = timezone(self.env.user.tz)
+            dt_emissao = datetime.now(tz).replace(microsecond=0).isoformat()
+        else:
+            dt_emissao = \
+                datetime.strptime(self.data_emissao, '%Y-%m-%d %H:%M:%S')
+            dt_emissao = dt_emissao.isoformat()
+
+        if self.cdv is not False:
+            cdv = str(self.cdv)
+        else:
+            chave = self.monta_chave()
+            cdv = str(chave[:len(chave) - 1])
+
+        # Monta chave de acesso
+        chave = self.monta_chave()
         ide = {
             'cUF': str(self.emit_uf.ibge_code),
             'tpAmb': self.amb,
-            'tpEmit': self.tipo_emit,
+            'tpEmit': self.tipo_emitente_mdfe,
             'tpTransp': None if self.tipo_tranpor is False else '1',
             'mod': 58,
-            'serie': self.serie,
-            'nMDF': self.numero_mdfe,
-            'cMDF': self.codigo_mdfe,
-            'cDV': self.cdv,
+            'serie': str(int(self.serie.code)),
+            'nMDF': str(int(self.numero_mdfe)),
+            'cMDF': str(self.codigo_mdfe),
+            'cDV': cdv,
             'modal': self.modal,
-            'dhEmi': self.data_emissao.replace(microsecond=0).isoformat(),
+            'dhEmi': dt_emissao,
             'tpEmis': self.tipo_emissao,
             'procEmi': '0',
             'verProc': 'Odoo',
-            'UFIni': self.inf_mun_carrega[0].code,
-            'UFFim': self.inf_mun_descarga[0].code,
+            'UFIni': self.inf_mun_carrega[0].mun.state_id.code,
+            'UFFim': self.inf_mun_descarga[0].mun.state_id.code,
             'infMunCarrega': carregamentos,
             'infPercurso': percursos,
-            'dhIniViagem':
-                self.dh_ini_viagem.replace(microsecond=0).isoformat()
         }
+        if self.dh_ini_viagem is not False:
+            dh_ini_viagem = \
+                datetime.strptime(self.dh_ini_viagem, '%Y-%m-%d %H:%M:%S')
+            ide['dhIniViagem'] = dh_ini_viagem.isoformat()
+
         if self.ind_canal_verde is not False:
             ide['indCanalVerde'] = self.ind_canal_verde
 
         if self.ind_carrega_posterior is not False:
             ide['indCarregaPosterior'] = self.ind_carrega_posterior
         ide = mdfe3.ideType(**ide)
-        print(ide.export())
+        print(ide.export(sys.stdout, 0))
 
     def monta_chave(self):
+        if self.data_emissao is False:
+            tz = timezone(self.env.user.tz)
+            dt_emissao = datetime.now(tz).replace(microsecond=0).isoformat()
+        else:
+            dt_emissao = self.data_emissao.replace(microsecond=0).isoformat()
         chave_parcial = "%s%s%s%s%s%s%d%s" % (
-            self.emit_uf.ibge_code, self.data_emissao,
-            self.emit_cnpj_cpf, '58',
+            self.emit_uf.ibge_code, dt_emissao, self.emit_cnpj_cpf, '58',
             self.serie.code.zfill(3), str(self.numero_mdfe).zfill(9),
-            self.tipo_emissao, self.codigo_mdfe)
+            int(self.tipo_emissao), self.codigo_mdfe)
         chave_parcial = re.sub('[^0-9]', '', chave_parcial)
         soma = 0
         contador = 2

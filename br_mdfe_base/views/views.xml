@@ -8,9 +8,6 @@
             <field name="type">tree</field>
             <field name="arch" type="xml">
                 <tree>
-                    <head>
-                        <button name="validar_mdfe" string="Validar MDF-e" class="oe_highlight" type="object"/>
-                    </head>
                     <field name="numero_mdfe"/>
                     <field name="serie"/>
                     <field name="tipo_emitente_mdfe"/>
@@ -129,9 +126,9 @@
             <field name="type">form</field>
             <field name="arch" type="xml">
                 <form>
-                    <head>
-                        <button name="validar_mdfe" string="Validar" type="object" class="oe_highlight"/>
-                    </head>
+                    <header>
+                        <button name="validar_mdfe" string="Validar MDF-e" class="oe_highlight" type="object"/>
+                    </header>
                     <group string="Principal" col="4" colspan="2">
                         <field name="emitente"/>
                         <field name="serie"/>
