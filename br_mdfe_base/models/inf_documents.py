@@ -32,6 +32,23 @@ class InfDocuments(models.Model):
         help='Deve ser preenchido com as informações \
         das unidades de transporte utilizadas.'
     )
+    peri = fields.One2many(
+        comodel_name='peri.products',
+        inverse_name="inf_documents",
+        required=False,
+        string=u'Produtos Perigosos',
+        help='Grupo XML do Grupo de Transporte de produtos classificados '
+             'pela ONU como perigosos'
+    )
+    inf_entrega_parcial = fields.One2many(
+        comodel_name='inf.entrega.parcial',
+        inverse_name="inf_documents",
+        required=False,
+        string=u'Entrega parcial',
+        help='Funcionalidade para gerar o grupo de informações de entrega '
+             'parcial (não ocorrer o embarque de todos os volumes '
+             'relacionados no CT-e)'
+    )
     chave = fields.Char(
         string=u'Chave',
         size=44,
@@ -43,3 +60,12 @@ class InfDocuments(models.Model):
         required=False,
     )
 
+    @api.onchange('chave')
+    def tipo_documento(self):
+        if self.chave is not False:
+            if self.chave[20:22] == '57':
+                self.tp_document = '1'
+            if self.chave[20:22] == '55':
+                self.tp_document = '2'
+            if self.chave[20:22] == '58':
+                self.tp_document = '3'

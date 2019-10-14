@@ -5,12 +5,10 @@ import logging
 import sys
 from odoo import models, fields, api
 from odoo.exceptions import UserError
-from mdfelib.v3_00 import mdfe as mdfe3
 from odoo.addons import decimal_precision as dp
 from datetime import datetime
-from dateutil.tz import tzoffset
 from pytz import timezone
-
+from .mdfe_v3_00 import *
 
 _logger = logging.getLogger(__name__)
 
@@ -19,6 +17,17 @@ class MdfeEletronic(models.Model):
     _name = 'mdfe.eletronic'
 
     name = fields.Char()
+    state = fields.Selection([
+        ('done', u'Autorizado o uso do MDF-e'),
+        ('canceled', u'Cancelamento de MDF-e homologado'),
+        ('received', u'Arquivo recebido com sucesso'),
+        ('processed', u'Arquivo processado'),
+        ('processing', u'Arquivo em processamento'),
+        ('closed', u'Encerramento de MDF-e homologado'),
+        ('rejected', u'Rejeitado')],
+        required=True,
+        string=u'Situação'
+    )
     emitente = fields.Many2one(
         comodel_name='res.company',
         required=True,
@@ -164,7 +173,7 @@ class MdfeEletronic(models.Model):
         required=True,
         string=u'Unidade de medida',
         help=u'Unidade de medida do Peso '
-        u'Bruto da Carga / Mercadorias transportadas'
+             u'Bruto da Carga / Mercadorias transportadas'
     )
     qtd_carga = fields.Float(
         string=u'Peso Bruto',
@@ -276,7 +285,7 @@ class MdfeEletronic(models.Model):
             search([('id', '=', vals['inf_mun_carrega'][0][2]['mun'])])
         mun_ini = mun_ini.state_id.code
         for carregamento in vals['inf_mun_carrega']:
-            mun = self.env['res.state.city'].\
+            mun = self.env['res.state.city']. \
                 search([('id', '=', carregamento[2]['mun'])])
 
             if mun_ini != mun.state_id.code:
@@ -310,7 +319,7 @@ class MdfeEletronic(models.Model):
             search([('id', '=', vals['inf_mun_descarga'][0][2]['mun'])])
         mun_fim = mun_fim.state_id.code
         for descarregamento in vals['inf_mun_descarga']:
-            mun = self.env['res.state.city'].\
+            mun = self.env['res.state.city']. \
                 search([('id', '=', descarregamento[2]['mun'])])
 
             if mun_fim != mun.state_id.code:
@@ -338,7 +347,7 @@ class MdfeEletronic(models.Model):
 
     @api.multi
     def validar_mdfe(self):
-        ender_emit = mdfe3.TEndeEmi(
+        ender_emit = TEndeEmi(
             xLgr=str(self.emit_logradouro),
             nro=str(self.emit_nro),
             xBairro=str(self.emit_bairro),
@@ -349,7 +358,7 @@ class MdfeEletronic(models.Model):
             CEP=re.sub('[^0-9]', '', str(self.emit_cep)),
             UF=str(self.emit_uf.code)
         )
-        emit = mdfe3.emitType(
+        emit = emitType(
             CNPJ=self.emit_cnpj_cpf,
             IE=self.emit_inscr_est,
             xNome=self.emit_nome,
@@ -359,7 +368,7 @@ class MdfeEletronic(models.Model):
 
         carregamentos = []
         for carregamento in self.inf_mun_carrega:
-            carregamento_append = mdfe3.infMunCarregaType(
+            carregamento_append = infMunCarregaType(
                 cMunCarrega='%s%s' % (
                     carregamento.mun.state_id.ibge_code,
                     carregamento.mun.ibge_code
@@ -372,36 +381,25 @@ class MdfeEletronic(models.Model):
         for percurso in self.inf_percurso:
             if self.inf_mun_carrega[0].code != percurso.code != \
                     self.inf_mun_descarga[0].code:
-                percursos.append(mdfe3.infPercursoType(percurso.code))
+                percursos.append(infPercursoType(percurso.code))
 
-        if self.data_emissao is False:
-            tz = timezone(self.env.user.tz)
-            dt_emissao = datetime.now(tz).replace(microsecond=0).isoformat()
-        else:
-            dt_emissao = \
-                datetime.strptime(self.data_emissao, '%Y-%m-%d %H:%M:%S')
-            dt_emissao = dt_emissao.isoformat()
-
+        chave = self.chave if self.chave is not False else self.monta_chave()
         if self.cdv is not False:
             cdv = str(self.cdv)
         else:
-            chave = self.monta_chave()
             cdv = str(chave[:len(chave) - 1])
 
-        # Monta chave de acesso
-        chave = self.monta_chave()
         ide = {
-            'cUF': str(self.emit_uf.ibge_code),
+            'cUF': self.emit_uf.ibge_code,
             'tpAmb': self.amb,
             'tpEmit': self.tipo_emitente_mdfe,
             'tpTransp': None if self.tipo_tranpor is False else '1',
             'mod': 58,
-            'serie': str(int(self.serie.code)),
-            'nMDF': str(int(self.numero_mdfe)),
-            'cMDF': str(self.codigo_mdfe),
+            'serie': int(self.serie.code),
+            'nMDF': int(self.numero_mdfe),
+            'cMDF': self.codigo_mdfe,
             'cDV': cdv,
             'modal': self.modal,
-            'dhEmi': dt_emissao,
             'tpEmis': self.tipo_emissao,
             'procEmi': '0',
             'verProc': 'Odoo',
@@ -410,18 +408,173 @@ class MdfeEletronic(models.Model):
             'infMunCarrega': carregamentos,
             'infPercurso': percursos,
         }
+        tz = timezone(self.env.user.tz)
+        if self.data_emissao is False:
+            ide['dhEmi'] = \
+                datetime.now(tz).replace(microsecond=0).isoformat()
+        else:
+            dt_emissao = fields.Datetime.from_string(self.data_emissao)
+            dt_emissao = tz.localize(dt_emissao).replace(microsecond=0)
+            ide['dhEmi'] = dt_emissao.isoformat()
+
         if self.dh_ini_viagem is not False:
-            dh_ini_viagem = \
-                datetime.strptime(self.dh_ini_viagem, '%Y-%m-%d %H:%M:%S')
+            dh_ini_viagem = fields.Datetime.from_string(self.dh_ini_viagem)
+            dh_ini_viagem = tz.localize(dh_ini_viagem).replace(microsecond=0)
             ide['dhIniViagem'] = dh_ini_viagem.isoformat()
+        else:
+            ide['dhIniViagem'] = ide['dhEmi']
 
         if self.ind_canal_verde is not False:
             ide['indCanalVerde'] = self.ind_canal_verde
 
         if self.ind_carrega_posterior is not False:
             ide['indCarregaPosterior'] = self.ind_carrega_posterior
-        ide = mdfe3.ideType(**ide)
-        print(ide.export(sys.stdout, 0))
+        ide = ideType(**ide)
+
+        # Vamos começar a gerar as infomações de descarga
+        descargas = []
+        for descarga in self.inf_mun_descarga:
+            inf_ctes = []
+            inf_nfes = []
+            mdfe_transps = []
+
+            for doc in descarga.inf_documents:
+                # Tratando unidade de transporte
+                inf_unid_transp = []
+                for unid in doc.inf_unid_transp:
+                    lac_unid_transp = []
+                    for lac_unid in unid.lac_unid_transp:
+                        x = lacUnidTranspType(
+                            nLacre=lac_unid.numero_lacre
+                        )
+                        lac_unid_transp.append(x)
+
+                    # Tratando unidades de Carga
+                    inf_unid_carga = []
+                    for unid_carga in unid.inf_unid_carga:
+                        lac_unid_carga = []
+                        for lac_carga in unid_carga.lac_unid_carga:
+                            x = lacUnidCargaType(
+                                nLacre=lac_carga.numero_lacre
+                            )
+                            lac_unid_carga.append(x)
+
+                        x = TUnidCarga(
+                            tpUnidCarga=unid_carga.tp_unid_carga,
+                            idUnidCarga=unid_carga.id_unid_carga
+                            if unid_carga.id_unid_carga is False else None,
+                            lacUnidCarga=lac_unid_carga if lac_unid_carga else
+                            None,
+                            qtdRat=unid_carga.qtd_rat
+                            if unid_carga.qtd_rat is False else None
+                        )
+                        inf_unid_carga.append(x)
+
+                    x = TUnidadeTransp(
+                        tpUnidTransp=unid.tp_unid_transp,
+                        idUnidTransp=unid.id_unid_transp
+                        if unid.qtd_rat is False else None,
+                        lacUnidTransp=lac_unid_transp if
+                        lac_unid_transp else None,
+                        infUnidCarga=inf_unid_carga if inf_unid_carga
+                        else None,
+                        qtdRat=unid.qtd_rat if unid.qtd_rat is False else None
+                    )
+                    inf_unid_transp.append(x)
+
+                # Tratando registros de produtos perigosos
+                peri_products = []
+                for peri in doc.peri:
+                    x = periType(
+                        nONU=peri.n_onu,
+                        xNomeAE=peri.xnome_ae,
+                        xClaRisco=peri.xcla_risco,
+                        grEmb=peri.gr_emb,
+                        qTotProd=peri.q_tot_prod,
+                        qVolTipo=peri.q_vol_tipo
+                    )
+                    peri_products.append(x)
+
+                if doc.tp_document == '1':
+                    # Tratando registros de entregas parciais
+                    entrega_parcial = []
+                    for parcial in doc.inf_entrega_parcial:
+                        x = infEntregaParcialType(
+                            qtdTotal=parcial.qtd_total,
+                            qtdParcial=parcial.qtd_parcial
+                        )
+                        entrega_parcial.append(x)
+
+                    x = infCTeType(
+                        chCTe=doc.chave,
+                        SegCodBarra=doc.seg_cod_barra if doc.seg_cod_barra
+                        else None,
+                        indReentrega=doc.ind_reentrega if doc.ind_reentrega
+                        else None,
+                        infUnidTransp=inf_unid_transp if inf_unid_transp
+                        else None,
+                        peri=peri_products if peri_products else None,
+                        infEntregaParcial=entrega_parcial if entrega_parcial
+                        else None,
+                    )
+                    inf_ctes.append(x)
+
+                if doc.tp_document == '2':
+                    x = infNFeType(
+                        chNFe=doc.chave,
+                        SegCodBarra=doc.seg_cod_barra if doc.seg_cod_barra
+                        else None,
+                        indReentrega=doc.ind_reentrega if doc.ind_reentrega
+                        else None,
+                        infUnidTransp=inf_unid_transp if inf_unid_transp
+                        else None,
+                        peri=peri_products if peri_products else None,
+                    )
+                    inf_nfes.append(x)
+
+                if doc.tp_document == '3':
+                    x = infMDFeTranspType(
+                        chMDFe=doc.chave,
+                        indReentrega=doc.ind_reentrega if doc.ind_reentrega
+                        else None,
+                        infUnidTransp=inf_unid_transp if inf_unid_transp
+                        else None,
+                        peri=peri_products if peri_products else None,
+                    )
+                    mdfe_transps.append(x)
+
+            x = infMunDescargaType(
+                cMunDescarga='%s%s' % (
+                    descarga.mun.state_id.ibge_code,
+                    descarga.mun.ibge_code
+                ),
+                xMunCarrega=descarga.mun.name,
+                infCTe=inf_ctes if inf_ctes else None,
+                infNFe=inf_nfes if inf_nfes else None,
+                infMDFeTransp=mdfe_transps if mdfe_transps else None
+            )
+            descargas.append(x)
+        inf_doc = infDocType(descargas)
+        inf_mdfe = infMDFeType(
+            versao=3.0,
+            Id="MDFe{}".format(chave),
+            ide=ide,
+            emit=emit,
+            infModal=None,
+            infDoc=inf_doc,
+            seg=None,
+            tot=None,
+            lacres=None,
+            autXML=None,
+            infAdic=None,
+            infRespTec=None
+        )
+        mdfe = TMDFe(
+            infMDFe=inf_mdfe,
+            infMDFeSupl=None,
+            Signature=None,
+        )
+        mdfe.export(sys.stdout, 0)
 
     def monta_chave(self):
         if self.data_emissao is False:
@@ -442,4 +595,8 @@ class MdfeEletronic(models.Model):
             if contador == 10:
                 contador = 2
         dv = (11 - soma % 11) if (soma % 11 != 0 and soma % 11 != 1) else 0
+        self.write({
+            'chave': chave_parcial + str(dv),
+            'cdv': str(dv)
+        })
         return chave_parcial + str(dv)

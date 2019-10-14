@@ -8,3 +8,5 @@ from . import inf_mun_desca
 from . import lacres
 from . import aut_xml
 from . import res_company
+from . import inf_entrega_parcial
+from . import peri_products
